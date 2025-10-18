@@ -2,14 +2,42 @@ import textwrap
 from datetime import datetime
 
 def log_transacao(func):
-
+    
     def wrapper(*args, **kwargs):
+        
         agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        print(f"--- DATA: {agora} | Executando: {func.__name__} ---") 
-        
-        
-        resultado = func(*args, **kwargs)
+        args_str = f"args={args!r}, kwargs={kwargs!r}"
+
+        try:
+           
+            resultado = func(*args, **kwargs)
+            retorno_str = repr(resultado) 
+            
+            log_entry = f"[{agora}] Função: {func.__name__} | Argumentos: {args_str} | Retorno: {retorno_str}\n"
+
+        except Exception as e:
+            
+            retorno_str = f"Exceção: {e!r}"
+            log_entry = f"[{agora}] Função: {func.__name__} | Argumentos: {args_str} | Retorno: {retorno_str}\n"
+            
+            try:    
+                with open("log.txt", "a", encoding="utf-8") as f:
+                    f.write(log_entry)
+            except Exception as log_e:
+                
+                print(f"ERRO CRÍTICO: Falha ao escrever log de ERRO no arquivo: {log_e}")
+
+            raise e 
+        try:
+            
+            with open("log.txt", "a", encoding="utf-8") as f:
+                f.write(log_entry)
+        except Exception as log_e:
+            
+            print(f"Falha ao escrever log de SUCESSO no arquivo: {log_e}")
+            print(f"Log que falhou: {log_entry}")
+            
         
         return resultado
     
@@ -35,7 +63,7 @@ def depositar(saldo, valor, historico, /):
     
     if valor > 0:
         saldo += valor
-    
+        
         historico.append({
             "tipo": "Depósito",
             "valor": valor,
@@ -82,7 +110,7 @@ def exibir_extrato(saldo, /, *, historico):
     if not historico:
         print("Não foram realizadas movimentações.")
     else:
-
+        
         for transacao in historico:
             data_formatada = transacao["data"].strftime("%d-%m-%Y %H:%M:%S")
             print(f"{data_formatada}\t{transacao['tipo']}:\tR$ {transacao['valor']:.2f}")
@@ -93,7 +121,7 @@ def exibir_extrato(saldo, /, *, historico):
 
 
 def gerar_relatorio_transacoes(historico, *, tipo_transacao=None):
-    
+  
     for transacao in historico:
         if tipo_transacao is None or transacao["tipo"].lower() == tipo_transacao.lower():
             yield transacao
@@ -107,7 +135,7 @@ def criar_usuario(usuarios):
 
     if usuario:
         print("\nJá existe usuário com esse CPF!")
-        return
+        return 
 
     nome = input("Informe o nome completo: ")
     data_nascimento = input("Informe a data de nascimento (dd-mm-aaaa): ")
@@ -133,10 +161,10 @@ def criar_conta(agencia, numero_conta, usuarios, contas):
     if usuario:
         contas.append({"agencia": agencia, "numero_conta": numero_conta, "usuario": usuario})
         print("\n=== Conta criada com sucesso! ===")
-        return numero_conta + 1
+        return numero_conta + 1 
     
     print("\nUsuário não encontrado, fluxo de criação de conta encerrado!")
-    return numero_conta
+    return numero_conta 
 
 
 
@@ -149,7 +177,7 @@ class ContaIterador:
         return self
 
     def __next__(self):
-        
+       
         if self._index >= len(self._contas):
             raise StopIteration
         
@@ -200,7 +228,7 @@ def main():
 
         elif opcao == "s":
             valor = float(input("Informe o valor do saque: "))
-            
+
             saldo, historico, numero_saques = sacar(
                 saldo=saldo,
                 valor=valor,
